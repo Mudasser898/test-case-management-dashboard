@@ -1,0 +1,34 @@
+# Database Configuration
+# For development (SQLite)
+DATABASE_URL="file:./dev.db"
+
+# For production (PostgreSQL - get this from Vercel/Supabase/PlanetScale)
+# DATABASE_URL="postgresql://username:password@hostname:port/database?sslmode=require"
+
+# Next.js Authentication
+NEXTAUTH_SECRET="your-super-secret-key-min-32-chars-long"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Production URLs (set in Vercel)
+# NEXTAUTH_URL="https://your-app.vercel.app"
+
+# OpenAI API (optional - for enhanced AI features)
+# OPENAI_API_KEY="sk-your-openai-api-key"
+
+# Email Configuration (optional - for notifications)
+# SMTP_HOST="smtp.gmail.com"
+# SMTP_PORT="587"
+# SMTP_USER="your-email@gmail.com"
+# SMTP_PASS="your-app-password"
+
+# File Upload (optional - for attachments)
+# UPLOAD_PROVIDER="local" # or "cloudinary", "aws-s3"
+# CLOUDINARY_URL="cloudinary://api_key:api_secret@cloud_name"
+
+# Analytics (optional)
+# GOOGLE_ANALYTICS_ID="G-XXXXXXXXXX"
+
+# Feature Flags
+# ENABLE_AI_FEATURES="true"
+# ENABLE_EMAIL_NOTIFICATIONS="true"
+# ENABLE_FILE_UPLOADS="true"

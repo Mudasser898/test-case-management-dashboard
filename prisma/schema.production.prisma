@@ -1,0 +1,293 @@
+// Test Case Management System Database Schema - PRODUCTION
+// Production-ready schema with PostgreSQL for Vercel deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String
+  avatar          String?
+  passwordHash    String?
+  emailVerified   DateTime?
+  isGuest         Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  // Relationships
+  sessions        Session[]
+  permissions     Permission[]
+  epics           Epic[]
+  testCases       TestCase[]
+  comments        Comment[]
+  auditLogs       AuditLog[]
+  aiMessages      AIMessage[]
+
+  @@map("users")
+}
+
+// Session Management
+model Session {
+  id            String      @id @default(cuid())
+  userId        String
+  sessionToken  String      @unique
+  accessToken   String?
+  refreshToken  String?
+  expiresAt     DateTime
+  userAgent     String?
+  ipAddress     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relationships
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Permission System
+model Permission {
+  id          String            @id @default(cuid())
+  userId      String
+  grantedBy   String
+  role        Role
+  status      PermissionStatus  @default(ACTIVE)
+  expiresAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relationships
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("permissions")
+}
+
+// Epic Management
+model Epic {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  passed      Int         @default(0)
+  total       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  // Relationships
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testCases   TestCase[]
+
+  @@unique([name, userId])
+  @@map("epics")
+}
+
+// Test Case Management
+model TestCase {
+  id                String        @id @default(cuid())
+  title             String
+  description       String
+  expectedResult    String
+  status            TestStatus    @default(NOT_RUN)
+  priority          Priority      @default(MEDIUM)
+  severity          Severity      @default(MEDIUM)
+  
+  // Classification
+  application       String
+  module            String
+  testType          TestType      @default(FUNCTIONAL)
+  testScenarioId    String
+  testScenario      String
+  
+  // Execution Details
+  detailedSteps     String        // JSON string array for PostgreSQL
+  actualBehavior    String?
+  notes             String?
+  evidence          String?
+  
+  // Metadata
+  tags              String?       // JSON string array for PostgreSQL
+  assignedTo        String?
+  executedBy        String?
+  executedAt        DateTime?
+  
+  // Relationships
+  userId            String
+  epicId            String
+  
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  // Relationships
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  epic              Epic          @relation(fields: [epicId], references: [id], onDelete: Cascade)
+  comments          Comment[]
+  attachments       Attachment[]
+
+  @@unique([testScenarioId, userId])
+  @@map("test_cases")
+}
+
+// Comment System
+model Comment {
+  id          String      @id @default(cuid())
+  content     String
+  testCaseId  String
+  userId      String
+  parentId    String?     // For nested comments
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  // Relationships
+  testCase    TestCase    @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent      Comment?    @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[]   @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+// Attachment System
+model Attachment {
+  id          String      @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  testCaseId  String
+  uploadedBy  String
+  createdAt   DateTime    @default(now())
+  deletedAt   DateTime?
+
+  // Relationships
+  testCase    TestCase    @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+// AI Template System
+model TestCaseTemplate {
+  id              String      @id @default(cuid())
+  name            String
+  description     String
+  category        String
+  sampleTestCases String      // JSON string array for PostgreSQL
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("test_case_templates")
+}
+
+// Audit Logging
+model AuditLog {
+  id          String      @id @default(cuid())
+  action      AuditAction
+  tableName   String
+  recordId    String
+  userId      String
+  oldValues   String?     // JSON string for PostgreSQL
+  newValues   String?     // JSON string for PostgreSQL
+  metadata    String?     // JSON string for PostgreSQL
+  description String?
+  createdAt   DateTime    @default(now())
+
+  // Relationships
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// AI Chat System
+model AIMessage {
+  id          String      @id @default(cuid())
+  role        MessageRole
+  content     String
+  userId      String
+  sessionId   String?
+  metadata    String?     // JSON string for PostgreSQL
+  createdAt   DateTime    @default(now())
+
+  // Relationships
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_messages")
+}
+
+// Enums
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+  COMMENTOR
+}
+
+enum PermissionStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum TestType {
+  FUNCTIONAL
+  PERFORMANCE
+  SECURITY
+  USABILITY
+  COMPATIBILITY
+  REGRESSION
+  SMOKE
+  INTEGRATION
+  UNIT
+  API
+}
+
+enum TestStatus {
+  NOT_RUN
+  PASSED
+  FAILED
+  BLOCKED
+  SKIPPED
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PERMISSION_GRANT
+  PERMISSION_REVOKE
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
