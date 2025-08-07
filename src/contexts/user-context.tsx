@@ -56,17 +56,27 @@ export function UserProvider({ children, ...props }: UserProviderProps) {
   const fetchPermissions = async () => {
     try {
       const response = await fetch('/api/permissions');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setPermissions(data);
+      setPermissions(data || []);
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
+      // Set empty permissions array on error - app should still work
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPermissions();
+    // Only fetch permissions when mounted on client-side
+    if (typeof window !== 'undefined') {
+      fetchPermissions();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   // Determine user's role and capabilities

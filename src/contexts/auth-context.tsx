@@ -31,22 +31,36 @@ const AuthProviderContext = createContext<AuthProviderState>(initialState);
 export function AuthProvider({ children, ...props }: AuthProviderProps) {
   const [currentSession, setCurrentSession] = useState<CurrentSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Check for existing session in localStorage
-    const storedSession = localStorage?.getItem('test-dashboard-session');
-    if (storedSession) {
-      try {
-        const session = JSON.parse(storedSession);
-        session.createdAt = new Date(session.createdAt);
-        setCurrentSession(session);
-      } catch (error) {
-        console.error('Failed to parse stored session:', error);
-        localStorage?.removeItem('test-dashboard-session');
-      }
-    }
-    setIsLoading(false);
+    setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    try {
+      // Check for existing session in localStorage
+      const storedSession = typeof window !== 'undefined' ? localStorage.getItem('test-dashboard-session') : null;
+      if (storedSession) {
+        try {
+          const session = JSON.parse(storedSession);
+          session.createdAt = new Date(session.createdAt);
+          setCurrentSession(session);
+        } catch (error) {
+          console.error('Failed to parse stored session:', error);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('test-dashboard-session');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to access localStorage:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isMounted]);
 
   const login = (name: string, email: string) => {
     const session: CurrentSession = {
@@ -57,12 +71,16 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
     };
     
     setCurrentSession(session);
-    localStorage?.setItem('test-dashboard-session', JSON.stringify(session));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('test-dashboard-session', JSON.stringify(session));
+    }
   };
 
   const logout = () => {
     setCurrentSession(null);
-    localStorage?.removeItem('test-dashboard-session');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('test-dashboard-session');
+    }
   };
 
   const createGuestSession = () => {
@@ -75,7 +93,9 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
     };
     
     setCurrentSession(session);
-    localStorage?.setItem('test-dashboard-session', JSON.stringify(session));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('test-dashboard-session', JSON.stringify(session));
+    }
   };
 
   const value = {

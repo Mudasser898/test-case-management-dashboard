@@ -29,31 +29,50 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const storedTheme = localStorage?.getItem(storageKey) as Theme;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    }
-  }, [storageKey]);
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-
-    root.classList.remove("light", "dark");
-
-    if (theme === "light") {
-      root.classList.add("light");
-    } else {
-      root.classList.add("dark");
+    if (!isMounted) return;
+    
+    try {
+      const storedTheme = typeof window !== 'undefined' ? localStorage.getItem(storageKey) as Theme : null;
+      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
+        setTheme(storedTheme);
+      }
+    } catch (error) {
+      console.error('Failed to access localStorage for theme:', error);
     }
-  }, [theme]);
+  }, [storageKey, isMounted]);
+
+  useEffect(() => {
+    if (!isMounted || typeof window === 'undefined') return;
+    
+    try {
+      const root = window.document.documentElement;
+
+      root.classList.remove("light", "dark");
+
+      if (theme === "light") {
+        root.classList.add("light");
+      } else {
+        root.classList.add("dark");
+      }
+    } catch (error) {
+      console.error('Failed to update theme classes:', error);
+    }
+  }, [theme, isMounted]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage?.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: (newTheme: Theme) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(storageKey, newTheme);
+      }
+      setTheme(newTheme);
     },
   };
 
