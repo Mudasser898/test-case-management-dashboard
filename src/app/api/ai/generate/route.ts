@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { TestCase } from '@/types';
+
 
 // Mock AI generation - in production, you would use OpenAI API
 // const openai = new OpenAI({

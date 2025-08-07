@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import type { Epic } from '@/types';
+
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
     const epics = await prisma.epic.findMany({
-      where: { isActive: true },
+      where: { 
+        deletedAt: null,
+        userId 
+      },
       include: {
         _count: {
           select: {
             testCases: {
               where: {
-                isDeleted: false,
+                deletedAt: null,
                 ...(userId ? { userId } : {})
               }
             }
@@ -22,14 +29,14 @@ export async function GET(request: NextRequest) {
         },
         testCases: {
           where: {
-            isDeleted: false,
+            deletedAt: null,
             status: 'PASSED',
             ...(userId ? { userId } : {})
           },
           select: { id: true }
         }
       },
-      orderBy: { order: 'asc' }
+      orderBy: { name: 'asc' }
     });
 
     const transformedEpics = epics.map(epic => ({

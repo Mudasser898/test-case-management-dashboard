@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { TestCaseCard } from "@/components/test-case-card";
 import { AddTestCaseModal } from "@/components/add-test-case-modal";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { useUser } from "@/contexts/user-context";
 import { useAuth } from "@/contexts/auth-context";
-import type { TestCase, Epic, FilterState, Permission, ShareInvitation } from "@/types";
+import type { TestCase, Epic, FilterState, ShareInvitation } from "@/types";
 
 export default function Dashboard() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -21,18 +21,44 @@ export default function Dashboard() {
     epic: null,
     search: '',
   });
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(true);
   const [expandedTestCase, setExpandedTestCase] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
-  const { permissions, canEdit, canView, fetchPermissions } = useUser();
+  const { permissions, canEdit, fetchPermissions } = useUser();
   const { currentSession, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  useEffect(() => {
-    initializeApp();
-  }, []);
+  const fetchEpics = useCallback(async () => {
+    if (!currentSession) return;
+    
+    try {
+      const response = await fetch(`/api/epics?userId=${currentSession.userId}`);
+      const data = await response.json();
+      setEpics(data);
+    } catch (error) {
+      console.error('Failed to fetch epics:', error);
+    }
+  }, [currentSession]);
 
-  const initializeApp = async () => {
+  const fetchTestCases = useCallback(async () => {
+    if (!currentSession) return;
+    
+    try {
+      const params = new URLSearchParams();
+      params.append('userId', currentSession.userId);
+      params.append('status', filters.status);
+      if (filters.epic) params.append('epic', filters.epic);
+      if (filters.search) params.append('search', filters.search);
+      
+      const response = await fetch(`/api/testcases?${params}`);
+      const data = await response.json();
+      setTestCases(data);
+    } catch (error) {
+      console.error('Failed to fetch test cases:', error);
+    }
+  }, [currentSession, filters]);
+
+  const initializeApp = useCallback(async () => {
     try {
       // Initialize database with default data
       await fetch('/api/init');
@@ -43,122 +69,19 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to initialize app:', error);
     }
-  };
+  }, [fetchEpics, fetchTestCases]);
+
+  useEffect(() => {
+    initializeApp();
+  }, [initializeApp]);
 
   useEffect(() => {
     fetchTestCases();
-  }, [filters]);
+  }, [fetchTestCases]);
 
-  const fetchEpics = async () => {
-    if (!currentSession) return;
-    
-    try {
-      const params = new URLSearchParams();
-      params.append('userId', currentSession.userId);
-      
-      const response = await fetch(`/api/epics?${params}`);
-      const data = await response.json();
-      setEpics(data);
-    } catch (error) {
-      console.error('Failed to fetch epics:', error);
-    }
-  };
 
-  const fetchTestCases = async () => {
-    if (!currentSession) return;
-    
-    try {
-      const params = new URLSearchParams();
-      params.append('userId', currentSession.userId);
-      if (filters.status !== 'all') params.append('status', filters.status);
-      if (filters.epic) params.append('epic', filters.epic);
-      if (filters.search) params.append('search', filters.search);
 
-      const response = await fetch(`/api/testcases?${params}`);
-      const data = await response.json();
-      
-      // If new user has no test cases, create some default ones
-      if (data.length === 0 && filters.status === 'all' && !filters.epic && !filters.search) {
-        await createDefaultTestCases();
-        // Fetch again after creating defaults
-        const retryResponse = await fetch(`/api/testcases?userId=${currentSession.userId}`);
-        const retryData = await retryResponse.json();
-        setTestCases(retryData);
-      } else {
-        setTestCases(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch test cases:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const createDefaultTestCases = async () => {
-    if (!currentSession) return;
-    
-    const defaultTestCases = [
-      {
-        userId: currentSession.userId,
-        application: "FCH Application",
-        module: "Authentication",
-        testType: "Functional",
-        testScenarioId: "TS_LOGIN_001",
-        testScenario: "User Login Functionality",
-        epic: "authentication",
-        title: "Valid User Login",
-        description: "Verify that a user can successfully log in with valid credentials",
-        detailedSteps: [
-          "Navigate to login page",
-          "Enter valid username", 
-          "Enter valid password",
-          "Click Login button"
-        ],
-        expectedResult: "User should be successfully logged in and redirected to dashboard",
-        actualBehavior: "",
-        status: "Passed" as const,
-        notes: "Working as expected",
-        evidence: "Screenshot attached showing successful login"
-      },
-      {
-        userId: currentSession.userId,
-        application: "FCH Application", 
-        module: "Authentication",
-        testType: "Functional",
-        testScenarioId: "TS_LOGIN_002",
-        testScenario: "Invalid Login Attempts",
-        epic: "authentication",
-        title: "Invalid Password Login",
-        description: "Verify error message is shown when user enters invalid password",
-        detailedSteps: [
-          "Navigate to login page",
-          "Enter valid username",
-          "Enter invalid password", 
-          "Click Login button"
-        ],
-        expectedResult: "Error message should be displayed: 'Invalid credentials'",
-        actualBehavior: "",
-        status: "Not Run" as const,
-        notes: "",
-        evidence: ""
-      }
-    ];
-
-    try {
-      const promises = defaultTestCases.map(testCase => 
-        fetch('/api/testcases', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(testCase),
-        })
-      );
-      await Promise.all(promises);
-    } catch (error) {
-      console.error('Failed to create default test cases:', error);
-    }
-  };
 
   const handleAddTestCase = async (testCaseData: Omit<TestCase, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!currentSession) return;
@@ -313,7 +236,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleBulkAddTestCases = async (bulkTestCases: Omit<TestCase, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  const handleBulkAddTestCases = async (bulkTestCases: Omit<TestCase, 'id' | 'createdAt' | 'updatedAt' | 'userId'>[]) => {
     if (!currentSession) return;
     
     try {

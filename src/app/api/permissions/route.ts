@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Permission, User } from '@/types';
 
+interface InvitationRequest {
+  email: string;
+  role: string;
+}
+
 // Mock users data
 const mockUsers: User[] = [
   {
@@ -18,7 +23,7 @@ const mockUsers: User[] = [
 ];
 
 // Mock permissions data
-let mockPermissions: Permission[] = [
+const mockPermissions: Permission[] = [
   {
     id: 'perm-1',
     userId: 'user-1',
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
   try {
     const { invitations } = await request.json();
     
-    const newPermissions: Permission[] = invitations.map((invitation: any) => {
+    const newPermissions: Permission[] = invitations.map((invitation: InvitationRequest) => {
       // Check if user already exists
       let user = mockUsers.find(u => u.email === invitation.email);
       
@@ -56,7 +61,7 @@ export async function POST(request: NextRequest) {
         id: `perm-${Date.now()}-${Math.random()}`,
         userId: user.id,
         user,
-        role: invitation.role,
+        role: invitation.role as 'owner' | 'editor' | 'viewer' | 'commentor',
         invitedAt: new Date(),
         status: 'pending',
       };
@@ -67,10 +72,10 @@ export async function POST(request: NextRequest) {
     mockPermissions.push(...newPermissions);
     
     // Simulate sending emails
-    console.log('Sending invitation emails to:', invitations.map((i: any) => i.email));
+    console.log('Sending invitation emails to:', invitations.map((i: InvitationRequest) => i.email));
     
     return NextResponse.json(newPermissions, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to send invitations' }, { status: 500 });
   }
 }
@@ -86,11 +91,11 @@ export async function PUT(request: NextRequest) {
     
     mockPermissions[permissionIndex] = {
       ...mockPermissions[permissionIndex],
-      role: role as any,
+      role: role as 'owner' | 'editor' | 'viewer' | 'commentor',
     };
     
     return NextResponse.json(mockPermissions[permissionIndex]);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update permission' }, { status: 500 });
   }
 }
@@ -112,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     mockPermissions.splice(index, 1);
     
     return NextResponse.json({ message: 'Permission removed successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to remove permission' }, { status: 500 });
   }
 }

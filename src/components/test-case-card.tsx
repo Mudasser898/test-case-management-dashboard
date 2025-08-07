@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { MoreHorizontal, Edit, Trash2, ChevronDown, ChevronUp, Save, FileText, Camera } from "lucide-react";
 import {
@@ -33,7 +31,6 @@ export function TestCaseCard({ testCase, isExpanded, onEdit, onDelete, onUpdate,
   const [evidence, setEvidence] = useState(testCase.evidence || '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
   
   const { currentUser, canEdit, canComment } = useUser();
 
@@ -44,38 +41,24 @@ export function TestCaseCard({ testCase, isExpanded, onEdit, onDelete, onUpdate,
     setHasUnsavedChanges(false);
   }, [testCase.notes, testCase.evidence]);
 
-  // Fetch comments when expanded
-  useEffect(() => {
-    if (isExpanded) {
-      fetchComments();
-    }
-  }, [isExpanded, testCase.id]);
-
-  const fetchComments = async () => {
-    setCommentsLoading(true);
+  const fetchComments = useCallback(async () => {
     try {
       const response = await fetch(`/api/comments?testCaseId=${testCase.id}`);
       const data = await response.json();
       setComments(data);
     } catch (error) {
       console.error('Failed to fetch comments:', error);
-    } finally {
-      setCommentsLoading(false);
     }
-  };
+  }, [testCase.id]);
 
-  const getStatusColor = (status: TestCase['status']) => {
-    switch (status) {
-      case 'Passed':
-        return 'bg-green-500';
-      case 'Failed':
-        return 'bg-red-500';
-      case 'Not Run':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
+  // Fetch comments when expanded
+  useEffect(() => {
+    if (isExpanded) {
+      fetchComments();
     }
-  };
+  }, [isExpanded, testCase.id, fetchComments]);
+
+
 
   const getStatusBadgeVariant = (status: TestCase['status']) => {
     switch (status) {

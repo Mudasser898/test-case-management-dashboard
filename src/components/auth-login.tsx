@@ -124,7 +124,7 @@ export function AuthLogin() {
           {/* Preview/Demo */}
           <Card className="shadow-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
             <CardHeader>
-              <CardTitle className="text-center">What You'll Get</CardTitle>
+              <CardTitle className="text-center">What You&apos;ll Get</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">

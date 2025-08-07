@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Search, Sun, Moon, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { Search, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import type { Epic, FilterState } from "@/types";
 

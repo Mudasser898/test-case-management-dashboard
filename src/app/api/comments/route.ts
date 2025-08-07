@@ -9,7 +9,7 @@ const currentUser: User = {
 };
 
 // Mock comments data
-let mockComments: Comment[] = [
+const mockComments: Comment[] = [
   {
     id: 'comment-1',
     testCaseId: 'TC1.1',
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     mockComments.push(newComment);
     
     return NextResponse.json(newComment, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
   }
 }
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest) {
     };
     
     return NextResponse.json(mockComments[commentIndex]);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 });
   }
 }
@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest) {
     mockComments.splice(commentIndex, 1);
     
     return NextResponse.json({ message: 'Comment deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
   }
 }

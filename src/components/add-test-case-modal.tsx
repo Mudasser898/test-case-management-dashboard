@@ -129,7 +129,7 @@ API,TC3.1,Test user creation API endpoint,API should return 201 status with user
         try {
           // Simple CSV parsing (handles basic quotes)
           const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-          const rowData: any = {};
+          const rowData: Record<string, string> = {};
           
           headers.forEach((header, index) => {
             rowData[header] = values[index] || '';
@@ -160,7 +160,7 @@ API,TC3.1,Test user creation API endpoint,API should return 201 status with user
           } as Omit<TestCase, 'id' | 'createdAt' | 'updatedAt' | 'userId'>;
           
           validTestCases.push(testCaseData);
-        } catch (rowError) {
+        } catch {
           errors.push(`Row ${i + 1}: Failed to parse row data`);
         }
       }
@@ -179,7 +179,7 @@ API,TC3.1,Test user creation API endpoint,API should return 201 status with user
         setCsvFile(null);
         setOpen(false);
       }
-    } catch (error) {
+            } catch {
       setBulkResults({
         success: 0,
         errors: ['Failed to process CSV file. Please check the file format.']

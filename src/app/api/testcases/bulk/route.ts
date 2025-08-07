@@ -66,15 +66,14 @@ export async function POST(request: NextRequest) {
           });
 
           // Create audit log
-          await createAuditLog(
-            'UPDATE',
-            'TestCase',
-            existingTestCase.id,
+          await createAuditLog({
+            action: 'UPDATE',
+            entity: 'TestCase',
+            entityId: existingTestCase.id,
             userId,
-            JSON.stringify({}),
-            JSON.stringify(testCaseData),
-            `Bulk updated test case ${testCaseData.testScenarioId}`
-          );
+            oldValues: {},
+            newValues: testCaseData
+          });
 
           results.updated++;
         } else {
@@ -90,15 +89,14 @@ export async function POST(request: NextRequest) {
           });
 
           // Create audit log
-          await createAuditLog(
-            'CREATE',
-            'TestCase',
-            newTestCase.id,
+          await createAuditLog({
+            action: 'CREATE',
+            entity: 'TestCase',
+            entityId: newTestCase.id,
             userId,
-            JSON.stringify({}),
-            JSON.stringify(testCaseData),
-            `Bulk created test case ${testCaseData.testScenarioId}`
-          );
+            oldValues: {},
+            newValues: testCaseData
+          });
 
           results.created++;
         }
@@ -111,7 +109,7 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        const passed = epicTestCases.filter(tc => tc.status === 'Passed').length;
+        const passed = epicTestCases.filter(tc => tc.status === 'PASSED').length;
         const total = epicTestCases.length;
 
         await prisma.epic.update({

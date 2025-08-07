@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -26,10 +26,6 @@ import {
   Bot,
   Send,
   Sparkles,
-  FileText,
-  Plus,
-  MessageSquare,
-  Wand2,
   Copy,
   Check,
 } from "lucide-react";
@@ -85,7 +81,8 @@ What would you like to test today?`,
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
 
   const fetchTemplates = async () => {
     try {
@@ -167,7 +164,7 @@ What would you like to test today?`,
     }
   };
 
-  const useTemplate = (template: TestCaseTemplate) => {
+  const applyTemplate = (template: TestCaseTemplate) => {
     setSelectedTemplate(template.id);
     setApplication(template.application);
     setModule(template.module);
@@ -221,7 +218,7 @@ What would you like to test today?`,
                     variant="outline"
                     size="sm"
                     className="w-full justify-start text-left h-auto p-3"
-                    onClick={() => useTemplate(template)}
+                    onClick={() => applyTemplate(template)}
                   >
                     <div>
                       <div className="font-medium text-xs">{template.name}</div>
@@ -360,7 +357,7 @@ What would you like to test today?`,
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground break-words">
-                💡 Try: "Generate login test cases for admin and regular users"
+                💡 Try: &quot;Generate login test cases for admin and regular users&quot;
               </div>
             </div>
           </div>

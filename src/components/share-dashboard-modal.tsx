@@ -112,20 +112,7 @@ export function ShareDashboardModal({
     }
   };
 
-  const getRoleDescription = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return 'Full access and management';
-      case 'editor':
-        return 'Can edit test cases and add new ones';
-      case 'viewer':
-        return 'Can view all content, read-only access';
-      case 'commentor':
-        return 'Can view and add comments to test cases';
-      default:
-        return '';
-    }
-  };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -174,7 +161,7 @@ export function ShareDashboardModal({
                   onKeyPress={(e) => e.key === 'Enter' && handleAddEmail()}
                   className="flex-1"
                 />
-                <Select value={role} onValueChange={(value: any) => setRole(value)}>
+                <Select value={role} onValueChange={(value: string) => setRole(value as 'editor' | 'viewer' | 'commentor')}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>

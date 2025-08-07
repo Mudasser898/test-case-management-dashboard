@@ -15,7 +15,6 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 // Audit logging utility
 export async function createAuditLog({
   userId,
-  testCaseId,
   action,
   entity,
   entityId,
@@ -24,28 +23,27 @@ export async function createAuditLog({
   ipAddress,
   userAgent,
 }: {
-  userId?: string
-  testCaseId?: string
+  userId: string
   action: string
   entity: string
   entityId: string
-  oldValues?: any
-  newValues?: any
+  oldValues?: Record<string, unknown>
+  newValues?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
 }) {
+  if (!userId) return;
+  
   try {
     await prisma.auditLog.create({
       data: {
         userId,
-        testCaseId,
-        action: action as any,
-        entity,
-        entityId,
+        action: action as 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'PERMISSION_GRANT' | 'PERMISSION_REVOKE',
+        tableName: entity,
+        recordId: entityId,
         oldValues: oldValues ? JSON.stringify(oldValues) : null,
         newValues: newValues ? JSON.stringify(newValues) : null,
-        ipAddress,
-        userAgent,
+        metadata: ipAddress || userAgent ? JSON.stringify({ ipAddress, userAgent }) : null,
       },
     })
   } catch (error) {
@@ -85,78 +83,7 @@ export async function createDefaultUserAccount() {
 }
 
 export async function initializeDatabase() {
-  try {
-    // Create default epics
-    const defaultEpics = [
-      { name: 'Authentication', description: 'User authentication and authorization features', color: '#10B981' },
-      { name: 'User Management', description: 'User profile and account management', color: '#3B82F6' },
-      { name: 'Dashboard', description: 'Main dashboard functionality', color: '#8B5CF6' },
-      { name: 'Settings', description: 'Application configuration and settings', color: '#F59E0B' },
-      { name: 'API Integration', description: 'External API integrations', color: '#EF4444' },
-    ]
-
-    for (const epic of defaultEpics) {
-      await prisma.epic.upsert({
-        where: { name: epic.name },
-        update: {},
-        create: epic,
-      })
-    }
-
-    // Create default test case templates
-    const defaultTemplates = [
-      {
-        name: 'Login Functionality',
-        description: 'Standard login test cases for web applications',
-        application: 'Web Application',
-        module: 'Authentication',
-        testType: 'FUNCTIONAL',
-        category: 'Authentication',
-        sampleTestCases: JSON.stringify([
-          {
-            title: 'Valid Login',
-            description: 'User can login with valid credentials',
-            steps: ['Navigate to login page', 'Enter valid username', 'Enter valid password', 'Click login'],
-            expectedResult: 'User is logged in successfully'
-          },
-          {
-            title: 'Invalid Login',
-            description: 'Error shown for invalid credentials',
-            steps: ['Navigate to login page', 'Enter invalid username', 'Enter invalid password', 'Click login'],
-            expectedResult: 'Error message is displayed'
-          }
-        ])
-      },
-      {
-        name: 'User Registration',
-        description: 'User registration flow test cases',
-        application: 'Web Application',
-        module: 'Authentication',
-        testType: 'FUNCTIONAL',
-        category: 'Authentication',
-        sampleTestCases: JSON.stringify([
-          {
-            title: 'Successful Registration',
-            description: 'User can register with valid information',
-            steps: ['Navigate to registration page', 'Fill all required fields', 'Submit form'],
-            expectedResult: 'User account is created and confirmation is shown'
-          }
-        ])
-      }
-    ]
-
-    for (const template of defaultTemplates) {
-      await prisma.testCaseTemplate.upsert({
-        where: { name: template.name },
-        update: {},
-        create: template,
-      })
-    }
-
-    console.log('Database initialized with default data')
-  } catch (error) {
-    console.error('Failed to initialize database:', error)
-  }
+  console.log('Database initialization skipped - data will be created as needed');
 }
 
 export default prisma

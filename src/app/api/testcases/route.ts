@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, createAuditLog } from '@/lib/db';
-import type { TestCase } from '@/types';
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,9 +15,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {
       userId,
-      isDeleted: false,
+      deletedAt: null,
     };
 
     // Filter by status
@@ -87,8 +88,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const testCaseData = await request.json();
+    const userId = testCaseData.userId;
     
-    if (!testCaseData.userId) {
+    if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
@@ -101,7 +103,8 @@ export async function POST(request: NextRequest) {
       epic = await prisma.epic.create({
         data: {
           name: testCaseData.epic,
-          description: `${testCaseData.epic} test cases`
+          description: `${testCaseData.epic} test cases`,
+          userId
         }
       });
     }
@@ -138,7 +141,6 @@ export async function POST(request: NextRequest) {
     // Create audit log
     await createAuditLog({
       userId: testCaseData.userId,
-      testCaseId: newTestCase.id,
       action: 'CREATE',
       entity: 'TestCase',
       entityId: newTestCase.id,
@@ -187,7 +189,7 @@ export async function PUT(request: NextRequest) {
 
     // Get existing test case
     const existingTestCase = await prisma.testCase.findFirst({
-      where: { id, userId, isDeleted: false }
+      where: { id, userId, deletedAt: null }
     });
 
     if (!existingTestCase) {
@@ -205,7 +207,8 @@ export async function PUT(request: NextRequest) {
         epic = await prisma.epic.create({
           data: {
             name: updateData.epic,
-            description: `${updateData.epic} test cases`
+            description: `${updateData.epic} test cases`,
+            userId
           }
         });
       }
@@ -249,7 +252,6 @@ export async function PUT(request: NextRequest) {
     // Create audit log
     await createAuditLog({
       userId,
-      testCaseId: id,
       action: 'UPDATE',
       entity: 'TestCase',
       entityId: id,
@@ -301,7 +303,7 @@ export async function DELETE(request: NextRequest) {
 
     // Get existing test case
     const existingTestCase = await prisma.testCase.findFirst({
-      where: { id, userId, isDeleted: false }
+      where: { id, userId, deletedAt: null }
     });
 
     if (!existingTestCase) {
@@ -312,16 +314,13 @@ export async function DELETE(request: NextRequest) {
     const deletedTestCase = await prisma.testCase.update({
       where: { id },
       data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-        deletedBy: userId
+        deletedAt: new Date()
       }
     });
 
     // Create audit log
     await createAuditLog({
       userId,
-      testCaseId: id,
       action: 'DELETE',
       entity: 'TestCase',
       entityId: id,
